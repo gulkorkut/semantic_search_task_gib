@@ -23,7 +23,7 @@ model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
 
 # Cache için global değişken
 embedding_konu_cache = {}
-embedding_konu_file = "files\embedding_konu_cache.npy"
+embedding_konu_file = "files/embedding_konu_cache.npy"
 
 # Kosinüs benzerliği hesaplamak için fonksiyon
 def cosine_similarity(a, b):
