@@ -54,6 +54,6 @@ for link in links:
     print(link)
 
 # Bağlantıları bir dosyaya kaydetmek için
-with open("ozelge_links.txt", "w", encoding="utf-8") as file:
+with open("files/ozelge_links.txt", "w", encoding="utf-8") as file:
     for link in links:
         file.write(link + "\n")

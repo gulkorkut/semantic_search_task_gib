@@ -23,7 +23,7 @@ driver_path = "path/to/chromedriver"
 driver = webdriver.Chrome()
 
 # Giriş bağlantı dosyasını tanımlayın
-input_file = "ozelge_links_co.txt"
+input_file = "files/ozelge_links.txt"
 
 def fetch_ozelge_content(link):
     """Bir linke giderek içerik çeker ve MongoDB'ye gönderir."""
