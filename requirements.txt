@@ -5,4 +5,4 @@ torch
 pymongo
 python-dotenv
 selenium
-faiss-gpu
+faiss-gpu>=1.7.0
