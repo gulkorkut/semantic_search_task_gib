@@ -23,19 +23,26 @@ model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
 
 # Cache için global değişken
 embedding_cache = {}
-embedding_file = "embedding_cache_konu.npy"
+embedding_file = "embedding_with_konu.npy"
 
 # Kosinüs benzerliği hesaplamak için fonksiyon
 def cosine_similarity(a, b):
-    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+    norm_a = np.linalg.norm(a)
+    norm_b = np.linalg.norm(b)
+    
+    # Eğer normlardan biri sıfırsa NaN döndürme
+    if norm_a == 0 or norm_b == 0:
+        return float('nan')
+    
+    return np.dot(a, b) / (norm_a * norm_b)
 
 # Embedding'leri ve meta verileri dosyaya kaydetme
 def save_embeddings_to_file():
-    documents = list(collection.find({}, {"_id": 1, "embedding": 1, "konu": 1, "embedding_konu": 1, "indirme_linki": 1}))
+    documents = list(collection.find({}, {"_id": 1, "embedding": 1,"embedding_konu": 1, "konu": 1, "indirme_linki": 1}))
     embeddings = {
         str(doc["_id"]): {
             "embedding": doc["embedding"],
-            "embedding_konu": doc.get("embedding_konu", np.zeros_like(doc["embedding"])),  # Konu embedding'i, varsa
+            "embedding_konu": doc["embedding_konu"],
             "konu": doc.get("konu", ""),
             "indirme_linki": doc.get("indirme_linki", "")
         }
@@ -57,27 +64,31 @@ def semantic_search(query, top_n=5):
     query_embedding = model.encode([query], convert_to_tensor=True)
     query_embedding = query_embedding.cpu().detach().numpy()  # GPU'dan çıkarıp numpy dizisine dönüştür
 
+    query_embedding_konu = model.encode([query], convert_to_tensor=True)  # Konu için de aynı şekilde embedding
+    query_embedding_konu = query_embedding_konu.cpu().detach().numpy()
+
     similarities = []
     for doc_id, data in embedding_cache.items():
-        # Hem belge embedding'i hem de konu embedding'i kullanılıyor
-        doc_embedding = data["embedding"]
-        konu_embedding = data["embedding_konu"]
-        
-        # İki embedding için benzerlik hesaplaması
-        similarity_doc = cosine_similarity(query_embedding, doc_embedding)
-        similarity_konu = cosine_similarity(query_embedding, konu_embedding)
-        
-        # Ortalama benzerlik skorunu alıyoruz
-        avg_similarity = (similarity_doc + similarity_konu) / 2
-        similarities.append((doc_id, avg_similarity))
+        embedding = data["embedding"]
+        embedding_konu = data["embedding_konu"]
 
-    similarities.sort(key=lambda x: x[1], reverse=True)
+        similarity = cosine_similarity(query_embedding, embedding)
+        topic_similarity = cosine_similarity(query_embedding_konu, embedding_konu)
+
+        # Eğer similarity ya da topic_similarity NaN ise atla
+        if np.isnan(similarity) or np.isnan(topic_similarity):
+            continue
+        
+        total_similarity = (similarity + topic_similarity) / 2
+        similarities.append((doc_id, similarity, topic_similarity, total_similarity))
+
+    similarities.sort(key=lambda x: x[3], reverse=True)  # total_similarity'ye göre sıralama yapıyoruz
     top_results = similarities[:top_n]
 
     results = []
-    for doc_id, similarity in top_results:
+    for doc_id, similarity, topic_similarity, total_similarity in top_results:
         data = embedding_cache[doc_id]
-        results.append((doc_id, similarity, data["konu"], data["indirme_linki"]))
+        results.append((doc_id, similarity, topic_similarity, total_similarity, data["konu"], data["indirme_linki"]))
 
     return results
 
@@ -89,6 +100,7 @@ query = st.text_input("Sorgunuzu girin:", "")
 
 if st.button("Ara"):
     if query:
+        #st.write("Sorgu çalıştırılıyor...")
         start_time = time.time()
 
         # Embedding'leri dosyadan yükle veya MongoDB'den çekip kaydet
@@ -101,12 +113,16 @@ if st.button("Ara"):
         end_time = time.time()
         execution_time = end_time - start_time
 
+        #st.write(f"Programın toplam çalışma süresi: {execution_time:.4f} saniye")
+
         # Sonuçları yazdır
         for result in results:
-            doc_id, similarity, konu, indirme_linki = result
+            doc_id, similarity, topic_similarity, total_similarity, konu, indirme_linki = result
             st.write(f"**Özelge:** {konu}")
             st.write(f"**Link:** [{indirme_linki}]({indirme_linki})")
-            st.write(f"**Benzerlik Skoru:** {similarity:.4f}")  # Benzerlik skorunu yazdır
+            st.write(f"**Benzerlik Skoru:** {similarity}")
+            st.write(f"**Konu Benzerlik Skoru:** {topic_similarity}")
+            st.write(f"**Toplam Benzerlik Skoru:** {total_similarity}")
             st.write("-" * 50)
     else:
         st.write("Lütfen bir sorgu girin.")
