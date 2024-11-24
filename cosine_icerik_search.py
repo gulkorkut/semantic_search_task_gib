@@ -18,12 +18,12 @@ collection = db["ozelge_collection"]
 
 # GPU kontrolü ve model yüklemesi
 device = "cuda" if torch.cuda.is_available() else "cpu"  # GPU varsa kullan
-print(f"Model {device} üzerinde çalışıyor.")  # Cihaz bilgisini yazdır
+#print(f"Model {device} üzerinde çalışıyor.")  # Cihaz bilgisini yazdır
 model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
 
 # Cache için global değişken
 embedding_cache = {}
-embedding_file = "embedding_cache.npy"
+embedding_file = "embedding_icerik_cache.npy"
 
 # Kosinüs benzerliği hesaplamak için fonksiyon
 def cosine_similarity(a, b):
