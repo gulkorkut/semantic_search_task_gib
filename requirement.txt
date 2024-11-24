@@ -1,0 +1,6 @@
+streamlit==1.21.0
+sentence-transformers==2.2.0
+numpy==1.23.1
+pymongo==4.5.1
+torch==2.1.0+cu118  # veya uygun CUDA sürümüne göre
+python-dotenv==1.0.0
