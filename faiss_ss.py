@@ -5,7 +5,6 @@ import time
 from pymongo import MongoClient
 import os
 import torch
-import faiss
 
 # .env dosyasını yükle
 from dotenv import load_dotenv
@@ -22,52 +21,55 @@ device = "cuda" if torch.cuda.is_available() else "cpu"  # GPU varsa kullan
 print(f"Model {device} üzerinde çalışıyor.")  # Cihaz bilgisini yazdır
 model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
 
-# FAISS index ve metadata cache
-faiss_index = None
-metadata_cache = {}
+# Cache için global değişken
+embedding_cache = {}
+embedding_file = "embedding_cache.npy"
 
-# Embedding'leri MongoDB'den çekip FAISS index oluşturma
-def build_faiss_index():
-    global faiss_index, metadata_cache
+# Kosinüs benzerliği hesaplamak için fonksiyon
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
-    # Verileri MongoDB'den çek
+# Embedding'leri ve meta verileri dosyaya kaydetme
+def save_embeddings_to_file():
     documents = list(collection.find({}, {"_id": 1, "embedding": 1, "konu": 1, "indirme_linki": 1}))
-    
-    # Embedding'leri ve metadata'yı ayır
-    embeddings = []
-    metadata_cache = {}
-    for i, doc in enumerate(documents):
-        embeddings.append(doc["embedding"])
-        metadata_cache[i] = {
-            "_id": str(doc["_id"]),
+    embeddings = {
+        str(doc["_id"]): {
+            "embedding": doc["embedding"],
             "konu": doc.get("konu", ""),
             "indirme_linki": doc.get("indirme_linki", "")
         }
+        for doc in documents
+    }
+    np.save(embedding_file, embeddings)
 
-    # FAISS index oluştur
-    embedding_dim = len(embeddings[0])  # Embedding boyutu
-    faiss_index = faiss.IndexFlatL2(embedding_dim)  # L2 norm kullanan index
-    faiss_index.add(np.array(embeddings).astype("float32"))  # FAISS float32 türü gerektirir
+# Embedding'leri dosyadan yükleme
+def load_embeddings_from_file():
+    global embedding_cache
+    if os.path.exists(embedding_file):
+        embedding_cache = np.load(embedding_file, allow_pickle=True).item()
+    else:
+        save_embeddings_to_file()
+        embedding_cache = np.load(embedding_file, allow_pickle=True).item()
 
-# FAISS ile benzerlik araması
-def semantic_search_faiss(query, top_n=5):
-    global faiss_index, metadata_cache
+# Sorgu için fonksiyon
+def semantic_search(query, top_n=5):
+    query_embedding = model.encode([query], convert_to_tensor=True)
+    query_embedding = query_embedding.cpu().detach().numpy()  # GPU'dan çıkarıp numpy dizisine dönüştür
 
-    # Sorguyu encode et
-    query_embedding = model.encode([query], convert_to_tensor=True).cpu().numpy()
+    similarities = []
+    for doc_id, data in embedding_cache.items():
+        embedding = data["embedding"]
+        similarity = cosine_similarity(query_embedding, embedding)
+        similarities.append((doc_id, similarity))
 
-    # FAISS ile en yakın komşuları bul
-    distances, indices = faiss_index.search(query_embedding.astype("float32"), top_n)
+    similarities.sort(key=lambda x: x[1], reverse=True)
+    top_results = similarities[:top_n]
 
-    # Sonuçları metadata ile birleştir
     results = []
-    for idx, dist in zip(indices[0], distances[0]):
-        metadata = metadata_cache[idx]
-        results.append({
-            "distance": dist,
-            "konu": metadata["konu"],
-            "indirme_linki": metadata["indirme_linki"]
-        })
+    for doc_id, similarity in top_results:
+        data = embedding_cache[doc_id]
+        results.append((doc_id, similarity, data["konu"], data["indirme_linki"]))
+
     return results
 
 # Streamlit UI ve işlevsellik
@@ -78,24 +80,27 @@ query = st.text_input("Sorgunuzu girin:", "")
 
 if st.button("Ara"):
     if query:
-        # FAISS index'i oluştur (ilk çalıştırmada yapılır)
-        if faiss_index is None:
-            build_faiss_index()
+        #st.write("Sorgu çalıştırılıyor...")
+        start_time = time.time()
+
+        # Embedding'leri dosyadan yükle veya MongoDB'den çekip kaydet
+        load_embeddings_from_file()
 
         # Sorguyu çalıştır
-        start_time = time.time()
-        results = semantic_search_faiss(query)
-        end_time = time.time()
+        results = semantic_search(query)
 
         # Programın çalışma süresi
+        end_time = time.time()
         execution_time = end_time - start_time
-        st.write(f"Arama süresi: {execution_time:.4f} saniye")
+
+        #st.write(f"Programın toplam çalışma süresi: {execution_time:.4f} saniye")
 
         # Sonuçları yazdır
         for result in results:
-            st.write(f"**Özelge:** {result['konu']}")
-            st.write(f"**Link:** [{result['indirme_linki']}]({result['indirme_linki']})")
-            st.write(f"**Benzerlik Skoru:** {1 - result['distance']:.4f}")  # Skor tersine çevrildi, çünkü FAISS mesafeleri döndürüyor
+            doc_id, similarity, konu, indirme_linki = result
+            st.write(f"**Özelge:** {konu}")
+            st.write(f"**Link:** [{indirme_linki}]({indirme_linki})")
+            st.write(f"**Benzerlik Skoru:** {similarity}")
             st.write("-" * 50)
     else:
         st.write("Lütfen bir sorgu girin.")
