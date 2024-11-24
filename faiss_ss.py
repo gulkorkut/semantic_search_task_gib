@@ -80,7 +80,7 @@ query = st.text_input("Sorgunuzu girin:", "")
 
 if st.button("Ara"):
     if query:
-        st.write("Sorgu çalıştırılıyor...")
+        #st.write("Sorgu çalıştırılıyor...")
         start_time = time.time()
 
         # Embedding'leri dosyadan yükle veya MongoDB'den çekip kaydet
@@ -93,7 +93,7 @@ if st.button("Ara"):
         end_time = time.time()
         execution_time = end_time - start_time
 
-        st.write(f"Programın toplam çalışma süresi: {execution_time:.4f} saniye")
+        #st.write(f"Programın toplam çalışma süresi: {execution_time:.4f} saniye")
 
         # Sonuçları yazdır
         for result in results:
