@@ -124,9 +124,9 @@ if st.button("Ara"):
             doc_id, similarity, topic_similarity, total_similarity, konu, indirme_linki = result
             st.write(f"**Özelge:** {konu}")
             st.write(f"**Link:** [{indirme_linki}]({indirme_linki})")
-            st.write(f"**İçerik Benzerlik Skoru:** {similarity:.2f}")
-            st.write(f"**Konu Benzerlik Skoru:** {topic_similarity:.2f}")
-            st.write(f"**Toplam Benzerlik Skoru:** {total_similarity:.2f}")
+            st.write(f"**İçerik Benzerlik Skoru:** {similarity:.4f}")
+            st.write(f"**Konu Benzerlik Skoru:** {topic_similarity:.4f}")
+            st.write(f"**Toplam Benzerlik Skoru:** {total_similarity:.4f}")
             st.write("-" * 50)
     else:
         st.write("Lütfen bir sorgu girin.")
