@@ -1,4 +1,3 @@
-
 ### **Semantic Search Proje Raporu**  
 
 - Vergi özelgelerinin semantik olarak aranmasını sağlamak, kullanıcıların istediği bilgiye hızlı ve doğru şekilde ulaşmasını kolaylaştırmak adına bir semantic search projesi geliştirildi.Bu süreçte ise özelge içeriklerinin web scraping ile toplanması, işlenmesi, embedding’lerin oluşturulması ve cosine similarity ile semantik arama yapılması gibi adımlar atıldı.
