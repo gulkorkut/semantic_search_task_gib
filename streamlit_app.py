@@ -122,8 +122,8 @@ if st.button("Ara"):
         # Sonuçları yazdır
         for result in results:
             doc_id, similarity, topic_similarity, total_similarity, konu, indirme_linki = result
-            st.write(f"**Özelge:** {konu}")
-            st.write(f"**Link:** [{indirme_linki}]({indirme_linki})")
+            st.write(f"**Özelge Konusu:** {konu}")
+            st.write(f"**İndirme Link:** [{indirme_linki}]({indirme_linki})")
             st.write(f"**İçerik Benzerlik Skoru:** {similarity:.4f}")
             st.write(f"**Konu Benzerlik Skoru:** {topic_similarity:.4f}")
             st.write(f"**Toplam Benzerlik Skoru:** {total_similarity:.4f}")
