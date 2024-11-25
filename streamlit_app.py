@@ -87,6 +87,10 @@ def semantic_search(query, top_n=5):
 
     results = []
     for doc_id, similarity, topic_similarity, total_similarity in top_results:
+        similarity = float(similarity)
+        topic_similarity = float(topic_similarity)
+        total_similarity = float(total_similarity)
+
         data = embedding_cache[doc_id]
         results.append((doc_id, similarity, topic_similarity, total_similarity, data["konu"], data["indirme_linki"]))
 
@@ -120,9 +124,9 @@ if st.button("Ara"):
             doc_id, similarity, topic_similarity, total_similarity, konu, indirme_linki = result
             st.write(f"**Özelge:** {konu}")
             st.write(f"**Link:** [{indirme_linki}]({indirme_linki})")
-            st.write(f"**Benzerlik Skoru:** {similarity}")
-            st.write(f"**Konu Benzerlik Skoru:** {topic_similarity}")
-            st.write(f"**Toplam Benzerlik Skoru:** {total_similarity}")
+            st.write(f"**İçerik Benzerlik Skoru:** {similarity:.2f}")
+            st.write(f"**Konu Benzerlik Skoru:** {topic_similarity:.2f}")
+            st.write(f"**Toplam Benzerlik Skoru:** {total_similarity:.2f}")
             st.write("-" * 50)
     else:
         st.write("Lütfen bir sorgu girin.")
