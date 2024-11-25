@@ -78,7 +78,7 @@
 1. **`cosine_icerik_search.py`:**  
    - Kullanıcı sorgusunu alarak özelge **içerikleri** üzerinden semantik bir arama gerçekleştirir.  
    - Sorgu embedding’ini oluşturur ve MongoDB’den alınan içerik embedding’leriyle **cosine similarity** hesaplayarak en alakalı sonuçları döner.
-   - Daha hızlı bir sonuç için embeddingleri ve kullanacağımız diğer bilgileri bir belgeye(embedding_icerik_cache.npy gibi) kaydediyoruz. Belge oluşmamışsa databaseden alıyoruz ve belgeyi de oluşturuyoruz.   
+   - Daha hızlı bir sonuç için embeddingleri ve kullanılan diğer bilgileri bir belgeye(embedding_icerik_cache.npy gibi) kaydeder. Belge oluşmamışsa bilgileri databaseden alır ve belgeyi oluşturur. GPU kullanarak da sorgu hızını arttırır.  
 
 2. **`cosine_konu_search.py`:**  
    - Kullanıcı sorgusunu özelge **konuları** üzerinden arar.  
