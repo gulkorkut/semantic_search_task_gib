@@ -31,7 +31,7 @@
 
 #### **Özelge İçeriklerini Çekme ve Veritabanına Kaydetme**  
 - **Script:** `icerik_cekme.py`   
-  - XPath ile özelge içeriği, tarihi, konusu ve indirme linklerini çekme.  
+  - XPath ile özelge içeriği, tarihi, konusu ve indirme linklerini çekme. Bu xpathler variables.py dosyasından sağlanır. 
   - Çekilen verileri MongoDB’ye şu yapı ile kaydetme:
   -   
     ```json
