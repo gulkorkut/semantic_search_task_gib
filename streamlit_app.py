@@ -5,6 +5,7 @@ import time
 from pymongo import MongoClient
 import os
 import torch
+from streamlit.components.v1 import html
 
 # .env dosyasını yükle
 from dotenv import load_dotenv
@@ -92,6 +93,20 @@ def semantic_search(query, top_n=5):
 
     return results
 
+def display_result_as_card(result):
+    doc_id, similarity, topic_similarity, total_similarity, konu, indirme_linki = result
+
+    card_html = f"""
+    <div style="border: 1px solid #ddd; border-radius: 10px; padding: 15px; margin: 10px 0; background-color: #f9f9f9;">
+        <h4 style="margin: 0; color: #0073e6;">{konu}</h4>
+        <p style="margin: 5px 0; font-size: 14px;">Toplam Benzerlik Skoru: <strong>{total_similarity:.2f}</strong></p>
+        <p style="margin: 5px 0; font-size: 14px;">İçerik Benzerlik Skoru: {similarity:.2f}</p>
+        <p style="margin: 5px 0; font-size: 14px;">Konu Benzerlik Skoru: {topic_similarity:.2f}</p>
+        <a href="{indirme_linki}" style="text-decoration: none; color: #ffffff; background-color: #0073e6; padding: 10px 15px; border-radius: 5px; font-size: 14px;">İndirme Linki</a>
+    </div>
+    """
+    st.markdown(card_html, unsafe_allow_html=True)
+
 # Streamlit UI ve işlevsellik
 st.title("Özelge Semantic Search")
 
@@ -100,29 +115,21 @@ query = st.text_input("Sorgunuzu girin:", "")
 
 if st.button("Ara"):
     if query:
-        #st.write("Sorgu çalıştırılıyor...")
+        st.info("Arama işlemi başlatıldı...")
         start_time = time.time()
 
-        # Embedding'leri dosyadan yükle veya MongoDB'den çekip kaydet
         load_embeddings_from_file()
-
-        # Sorguyu çalıştır
         results = semantic_search(query)
 
-        # Programın çalışma süresi
         end_time = time.time()
         execution_time = end_time - start_time
+        st.success(f"Arama tamamlandı! Süre: {execution_time:.2f} saniye.")
 
-        #st.write(f"Programın toplam çalışma süresi: {execution_time:.4f} saniye")
-
-        # Sonuçları yazdır
-        for result in results:
-            doc_id, similarity, topic_similarity, total_similarity, konu, indirme_linki = result
-            st.write(f"**Özelge Konusu:** {konu}")
-            st.write(f"**İndirme Linki:** [{indirme_linki}]({indirme_linki})")
-            st.write(f"**Benzerlik Skoru(İçerik):** {similarity}")
-            st.write(f"**Konu Benzerlik Skoru:** {topic_similarity}")
-            st.write(f"**Toplam Benzerlik Skoru:** {total_similarity}")
-            st.write("-" * 50)
+        if results:
+            for result in results:
+                display_result_as_card(result)
+        else:
+            st.warning("Sonuç bulunamadı.")
     else:
-        st.write("Lütfen bir sorgu girin.")
+        st.error("Lütfen bir sorgu girin.")
+
