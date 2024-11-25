@@ -17,20 +17,20 @@ db = client["ozelge_database"]
 collection = db["ozelge_collection"]
 
 # GPU kontrolü ve model yüklemesi
-device = "cuda" if torch.cuda.is_available() else "cpu"  # GPU varsa kullan
-print(f"Model {device} üzerinde çalışıyor.")  # Cihaz bilgisini yazdır
+device = "cuda" if torch.cuda.is_available() else "cpu"  # GPU varsa onu kullan
+#print(f"Model {device} üzerinde çalışıyor.")  # Hangi cihazda çalıştığını kontrol etmek için
 model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
 
 # Cache için global değişken
 embedding_cache = {}
 embedding_file = "files/embedding_hibrit_cache.npy"
 
-# Kosinüs benzerliği hesaplamak için fonksiyon
+# cosine similarity hesaplamak için fonksiyon
 def cosine_similarity(a, b):
     norm_a = np.linalg.norm(a)
     norm_b = np.linalg.norm(b)
     
-    # Eğer normlardan biri sıfırsa NaN döndürme
+    # Eğer normlardan biri sıfırsa NaN döndür
     if norm_a == 0 or norm_b == 0:
         return float('nan')
     
@@ -59,10 +59,10 @@ def load_embeddings_from_file():
         save_embeddings_to_file()
         embedding_cache = np.load(embedding_file, allow_pickle=True).item()
 
-# Sorgu için fonksiyon
+# Semantic Search fonksiyonu
 def semantic_search(query, top_n=5):
     query_embedding = model.encode([query], convert_to_tensor=True)
-    query_embedding = query_embedding.cpu().detach().numpy()  # GPU'dan çıkarıp numpy dizisine dönüştür
+    query_embedding = query_embedding.cpu().detach().numpy()  # numpy dizisine dönüştür
 
     query_embedding_konu = model.encode([query], convert_to_tensor=True)  # Konu için de aynı şekilde embedding
     query_embedding_konu = query_embedding_konu.cpu().detach().numpy()
@@ -87,20 +87,23 @@ def semantic_search(query, top_n=5):
 
     results = []
     for doc_id, similarity, topic_similarity, total_similarity in top_results:
+        similarity = float(similarity)
+        topic_similarity = float(topic_similarity)
+        total_similarity = float(total_similarity)
+
         data = embedding_cache[doc_id]
         results.append((doc_id, similarity, topic_similarity, total_similarity, data["konu"], data["indirme_linki"]))
 
     return results
 
-# Streamlit UI ve işlevsellik
+# Streamlit 
 st.title("Özelge Semantic Search")
 
-# Kullanıcıdan sorgu almak
+# Kullanıcıdan sorgu al
 query = st.text_input("Sorgunuzu girin:", "")
 
 if st.button("Ara"):
     if query:
-        #st.write("Sorgu çalıştırılıyor...")
         start_time = time.time()
 
         # Embedding'leri dosyadan yükle veya MongoDB'den çekip kaydet
@@ -113,16 +116,16 @@ if st.button("Ara"):
         end_time = time.time()
         execution_time = end_time - start_time
 
-        #st.write(f"Programın toplam çalışma süresi: {execution_time:.4f} saniye")
+        #st.write(f"Programın toplam çalışma süresini yazdırmak istenirse: {execution_time:.4f} saniye")
 
         # Sonuçları yazdır
         for result in results:
             doc_id, similarity, topic_similarity, total_similarity, konu, indirme_linki = result
-            st.write(f"**Özelge:** {konu}")
-            st.write(f"**Link:** [{indirme_linki}]({indirme_linki})")
-            st.write(f"**Benzerlik Skoru:** {similarity}")
-            st.write(f"**Konu Benzerlik Skoru:** {topic_similarity}")
-            st.write(f"**Toplam Benzerlik Skoru:** {total_similarity}")
+            st.write(f"**Özelge Konusu:** {konu}")
+            st.write(f"**İndirme Link:** [{indirme_linki}]({indirme_linki})")
+            st.write(f"**İçerik Benzerlik Skoru:** {similarity:.4f}")
+            st.write(f"**Konu Benzerlik Skoru:** {topic_similarity:.4f}")
+            st.write(f"**Toplam Benzerlik Skoru:** {total_similarity:.4f}")
             st.write("-" * 50)
     else:
         st.write("Lütfen bir sorgu girin.")

@@ -18,7 +18,7 @@ model = SentenceTransformer('all-MiniLM-L6-v2')
 
 def store_embeddings_bulk():
     """
-    Tüm embedding'leri bir seferde hesaplar, hem veritabanına hem de bir dosyaya kaydeder.
+    Tüm embedding'leri bir seferde hesaplar, hem veritabanına hem de bir dosyaya kaydeder.Daha hızlı işlem amaçlandı.
     """
     # MongoDB'den tüm içerikleri al
     documents = list(collection.find({}, {"_id": 1, "konu": 1}))  # '_id' ve 'konu' alanlarını al
@@ -33,7 +33,7 @@ def store_embeddings_bulk():
 
     # Embedding'leri veritabanına kaydet ve aynı zamanda bellekte tut
     for i, doc in enumerate(documents):
-        # Veritabanına embedding'i kaydet
+        # Veritabanına embedding'i kaydet. Update one ile tek tek değil de bir kerede güncelleme.
         collection.update_one({"_id": doc["_id"]}, {"$set": {"embedding_konu": embeddings_konu[i]}})
         
         # Bellekte tut

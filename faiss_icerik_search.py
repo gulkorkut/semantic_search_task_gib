@@ -19,7 +19,7 @@ collection = db["ozelge_collection"]
 
 # GPU kontrolü ve model yüklemesi
 device = "cuda" if torch.cuda.is_available() else "cpu"  # GPU varsa kullan
-print(f"Model {device} üzerinde çalışıyor.")  # Cihaz bilgisini yazdır
+# print(f"Model {device} üzerinde çalışıyor.") #GPU kullanıp kullanmadığını kontrol için
 model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
 
 # FAISS index ve metadata cache
@@ -47,7 +47,7 @@ def build_faiss_index():
     # FAISS index oluştur
     embedding_dim = len(embeddings[0])  # Embedding boyutu
     faiss_index = faiss.IndexFlatL2(embedding_dim)  # L2 norm kullanan index
-    faiss_index.add(np.array(embeddings).astype("float32"))  # FAISS float32 türü gerektirir
+    faiss_index.add(np.array(embeddings).astype("float32"))  # FAISS float32 türü gerektirdiği için
 
 # FAISS ile benzerlik araması
 def semantic_search_faiss(query, top_n=5):
@@ -70,15 +70,14 @@ def semantic_search_faiss(query, top_n=5):
         })
     return results
 
-# Streamlit UI ve işlevsellik
+# Streamlit
 st.title("Özelge Semantic Search")
 
-# Kullanıcıdan sorgu almak
 query = st.text_input("Sorgunuzu girin:", "")
 
 if st.button("Ara"):
     if query:
-        # FAISS index'i oluştur (ilk çalıştırmada yapılır)
+        # FAISS index'i oluştur 
         if faiss_index is None:
             build_faiss_index()
 
@@ -87,11 +86,11 @@ if st.button("Ara"):
         results = semantic_search_faiss(query)
         end_time = time.time()
 
-        # Programın çalışma süresi
+        # Programın çalışma süresi yazdırmak istenirse
         execution_time = end_time - start_time
         st.write(f"Arama süresi: {execution_time:.4f} saniye")
 
-        # Sonuçları yazdır
+        # Sonuçlar
         for result in results:
             st.write(f"**Özelge:** {result['konu']}")
             st.write(f"**Link:** [{result['indirme_linki']}]({result['indirme_linki']})")

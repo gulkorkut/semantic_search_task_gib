@@ -98,8 +98,8 @@ if st.button("Ara"):
         # Sonuçları yazdır
         for result in results:
             doc_id, similarity, konu, indirme_linki = result
-            st.write(f"**Özelge:** {konu}")
-            st.write(f"**Link:** [{indirme_linki}]({indirme_linki})")
+            st.write(f"**Özelge Konusu:** {konu}")
+            st.write(f"**İndirme Linki:** [{indirme_linki}]({indirme_linki})")
             st.write(f"**Benzerlik Skoru:** {similarity}")
             st.write("-" * 50)
     else:

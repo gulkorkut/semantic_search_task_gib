@@ -44,7 +44,7 @@
       "icerik": "Metin"
     }
     ```  
-  -  Tüm özelgeler veritabanına kaydedildi. Eğer bir özelge zaten veritabanında varsa o özelge tekrar kaydedilmedi. Bunu sağlamak adına id üzerinden indexleme(uniq) yapıldı. 
+  -  Tüm özelgeler veritabanına kaydedildi. Eğer bir özelge zaten veritabanında varsa o özelge tekrar kaydedilmedi. Bunu sağlamak adına id üzerinden indexleme(unique) yapıldı. 
 
 ---
 

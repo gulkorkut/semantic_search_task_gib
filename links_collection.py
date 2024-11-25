@@ -3,21 +3,19 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 import time
 
-# ChromeDriver yolunu belirtin
-driver_path = "chromedriver.exe"
+
 driver = webdriver.Chrome()
 
-# Ana URL
 base_url = "https://www.gib.gov.tr"
 search_url = f"{base_url}/search/node/kdv%20istisna%20type%3An_ozelge"
 
-# Selenium ile özelge bağlantılarını toplama
+# Selenium ile özelge bağlantılarını topla
 def fetch_all_links():
     driver.get(search_url)
-    time.sleep(3)  # Sayfanın yüklenmesini bekleyin
+    time.sleep(3)  
 
     links = []
-    page_count = 0  # Sayfa sayacı
+    page_count = 0  
 
     while page_count < 220:  # 220 sayfa olana kadar devam et
         # Sayfadaki tüm bağlantıları XPath sırasına göre bul
@@ -30,10 +28,10 @@ def fetch_all_links():
                 # Bu sırada bağlantı yoksa atla
                 pass
 
-        # Sayfa sayısını bir artır
+        # Sayfa sayısını artır
         page_count += 1
 
-        # Sonraki sayfa düğmesine geç
+        # Sonraki sayfa düğmesi
         try:
             next_btn = driver.find_element(By.LINK_TEXT, "sonraki ›")
             ActionChains(driver).move_to_element(next_btn).click().perform()  # Sonraki butonuna tıklama

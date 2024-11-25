@@ -9,26 +9,25 @@ from variables import *
 # .env dosyasını yükle
 load_dotenv()
 
-# MongoDB bağlantısı
 db_uri = os.getenv("DB_INF")  # MongoDB bağlantı URI'sini .env'den al
-client = MongoClient(db_uri)  # MongoDB istemcisini oluştur
-db = client["ozelge_database"]  # Veritabanı adı
-collection = db["ozelge_collection"]  # Koleksiyon adı
+client = MongoClient(db_uri)  
+db = client["ozelge_database"]  
+collection = db["ozelge_collection"]  
 
+# İlk defa indexleme yapılırken burayı kullan
 # 'id' alanı için unique index oluşturuluyor
 # collection.create_index([("id", 1)], unique=True)
 
-# ChromeDriver yolunu belirtin
-driver_path = "path/to/chromedriver"
+
 driver = webdriver.Chrome()
 
-# Giriş bağlantı dosyasını tanımlayın
+# Bağlantı dosyası
 input_file = "files/ozelge_links.txt"
 
 def fetch_ozelge_content(link):
     """Bir linke giderek içerik çeker ve MongoDB'ye gönderir."""
-    driver.get(link)  # Sayfaya git
-    time.sleep(3)  # Sayfanın yüklenmesini bekle
+    driver.get(link)  
+    time.sleep(3)  
 
     data_to_insert = []
 
@@ -78,11 +77,11 @@ def fetch_ozelge_content(link):
         except Exception as e:
             print(f"Veri eklenirken hata oluştu: {e}")
 
-# Bağlantı dosyasını okuyun
+# Bağlantı dosyasını oku
 with open(input_file, "r", encoding="utf-8") as file:
     links = file.readlines()
 
-# Linkleri işleyin
+# Linkleri işle
 for link in links:
     link = link.strip()  # Satırdaki gereksiz boşlukları temizle
     if not link:  # Eğer satır boşsa atla
@@ -91,7 +90,6 @@ for link in links:
     # İçeriği çek ve MongoDB'ye kaydet
     fetch_ozelge_content(link)
 
-# Tarayıcıyı kapat
 driver.quit()
 
 print("Tüm içerikler MongoDB'ye gönderildi.")
