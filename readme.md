@@ -1,119 +1,143 @@
-### **Semantic Search Proje Raporu**  
 
-- Vergi özelgelerinin semantik olarak aranmasını sağlamak, kullanıcıların istediği bilgiye hızlı ve doğru şekilde ulaşmasını kolaylaştırmak adına bir semantic search projesi geliştirildi.Bu süreçte ise özelge içeriklerinin web scraping ile toplanması, işlenmesi, embedding’lerin oluşturulması ve cosine similarity ile semantik arama yapılması gibi adımlar atıldı.
 
----
+### **Semantic Search Project Report**
 
-### **Kullanılan Teknolojiler ve Araçlar**  
-- **Kütüphaneler ve Teknolojiler:**  
-  - **Web Scraping:** Selenium  
-  - **Embedding ve Semantic Search:**  
-    - SentenceTransformers (`all-MiniLM-L6-v2`)  
-    - FAISS (Facebook AI Similarity Search)  
-    - Cosine Similarity  
-  - **Veri Tabanı:** MongoDB  
-  - **Arayüz:** Streamlit  
-- **Diğer Araçlar:** ChromeDriver, dotenv  
+* A semantic search project was developed to enable semantic searching of tax rulings, allowing users to quickly and accurately access the information they need. The process involved collecting ruling contents via web scraping, processing them, creating embeddings, and performing semantic search using cosine similarity.
 
 ---
 
-### **Çalışmanın Aşamaları**  
+### **Technologies and Tools**
 
-#### **Web Scraping ile Veri Toplama**  
-- **Script:** `link_collection.py`  
+* **Libraries and Technologies:**
 
-  - Gelir İdaresi Başkanlığı özelge sayfalarından Selenium ile dinamik içeriklerin yüklenmesini bekleyerek sayfa linklerini toplama.  
-  - Sayfalardaki tüm özelge bağlantılarını `ozelge_links.txt` dosyasına kaydetme.  
-  - 220 sayfadan toplam 2200 adet özelge bağlantısı toplandı.  
+  * **Web Scraping:** Selenium
+  * **Embedding and Semantic Search:**
+
+    * SentenceTransformers (`all-MiniLM-L6-v2`)
+    * FAISS (Facebook AI Similarity Search)
+    * Cosine Similarity
+  * **Database:** MongoDB
+  * **Interface:** Streamlit
+* **Other Tools:** ChromeDriver, dotenv
 
 ---
 
-#### **Özelge İçeriklerini Çekme ve Veritabanına Kaydetme**  
-- **Script:** `icerik_cekme.py`   
-  - XPath ile özelge içeriği, tarihi, konusu ve indirme linklerini çekme. Bu xpathler variables.py dosyasından sağlanır. 
-  - Çekilen verileri MongoDB’ye şu yapı ile kaydetme:
-  -   
+### **Project Workflow**
+
+#### **Data Collection via Web Scraping**
+
+* **Script:** `link_collection.py`
+
+  * Collected page links from the Revenue Administration’s tax ruling pages using Selenium by waiting for dynamic content to load.
+  * Saved all ruling links to `ozelge_links.txt`.
+  * A total of 2,200 ruling links were collected from 220 pages.
+
+---
+
+#### **Extracting Ruling Content and Storing in Database**
+
+* **Script:** `icerik_cekme.py`
+
+  * Extracted ruling content, date, subject, and download links using XPath, provided from `variables.py`.
+  * Stored extracted data in MongoDB with the following structure:
+
     ```json
     {
-      "id": "Özelge ID",
-      "konu": "Konu",
+      "id": "Ruling ID",
+      "konu": "Subject",
       "ozelge_linki": "Link",
-      "ozelge_tarihi": "Tarih",
-      "indirme_linki": "İndirme Linki",
-      "icerik": "Metin"
+      "ozelge_tarihi": "Date",
+      "indirme_linki": "Download Link",
+      "icerik": "Text"
     }
-    ```  
-  -  Tüm özelgeler veritabanına kaydedildi. Eğer bir özelge zaten veritabanında varsa o özelge tekrar kaydedilmedi. Bunu sağlamak adına id üzerinden indexleme(unique) yapıldı. 
+    ```
+  * All rulings were saved in the database. If a ruling already existed, it was not saved again. Uniqueness was ensured using indexing on `id`.
 
 ---
 
-#### **Embedding Oluşturma**  
-- **Script:** `embedding_olustur.py`  
-  - SentenceTransformers modeli (`all-MiniLM-L6-v2`) ile özelge metinlerini ve konu başlıklarını embedding’e dönüştürme.  
-  - MongoDB belgelerine embedding alanı ekleme. Veritabanının yeni yapısı:
+#### **Embedding Creation**
+
+* **Script:** `embedding_olustur.py`
+
+  * Converted ruling texts and subjects into embeddings using SentenceTransformers (`all-MiniLM-L6-v2`).
+  * Added embedding fields to MongoDB documents. Updated structure:
+
     ```json
     {
-      "id": "Özelge ID",
-      "konu": "Konu",
+      "id": "Ruling ID",
+      "konu": "Subject",
       "ozelge_linki": "Link",
-      "ozelge_tarihi": "Tarih",
-      "indirme_linki": "İndirme Linki",
-      "icerik": "Metin"
-      "embedding": "Embedding(içerik için)"
-      "embedding_konu": "Embedding Konu"
+      "ozelge_tarihi": "Date",
+      "indirme_linki": "Download Link",
+      "icerik": "Text",
+      "embedding": "Embedding (for content)",
+      "embedding_konu": "Embedding (for subject)"
     }
-    ```  
-  - İçerik ve konu embeddingleri oluşturuldu ve MongoDB’ye kaydedildi.  
-
----
-
-#### **Semantic Search ve Hibrit Arama**  
-- **Scriptler:**  
-  - `cosine_icerik_search.py` (içerik bazlı arama)  
-  - `cosine_konu_search.py` (konu bazlı arama)  
-  - `hibrit_search.py` (içerik ve konu birleşimiyle arama) 
-
-#### **Scriptler ve İşlevleri**
-1. **`cosine_icerik_search.py`:**  
-   - Kullanıcı sorgusunu alarak özelge **içerikleri** üzerinden semantik bir arama gerçekleştirir.  
-   - Sorgu embedding’ini oluşturur ve MongoDB’den alınan içerik embedding’leriyle **cosine similarity** hesaplayarak en alakalı sonuçları döner.
-   - Daha hızlı bir sonuç için embeddingleri ve kullanılan diğer bilgileri bir belgeye(embedding_icerik_cache.npy gibi) kaydeder. Belge oluşmamışsa bilgileri databaseden alır ve belgeyi oluşturur. GPU kullanarak da sorgu hızını arttırır.  
-
-2. **`cosine_konu_search.py`:**  
-   - Kullanıcı sorgusunu özelge **konuları** üzerinden arar.  
-   - Sorgu embedding’ini oluşturur ve konu başlıklarının embedding’leriyle benzerlik hesaplar.  
-
-3. **`hibrit_search.py`:**  
-   - **Hem içerik hem de konu** embedding’leri üzerinde arama yapar.  
-   - İçerik ve konu bazlı benzerlik skorlarını birleştirir.  
-   - Kullanıcı sorgusuna göre her iki skorun bir ağırlık katsayısı ile birleştirilmesi sağlanır.
-   - Bu adresten bu yaklaşımı deneyebilirsiniz: https://semanticsearchgib.streamlit.app/
-
----
-
-#### **Yöntem**  
-   - Kullanıcıdan alınan metin, SentenceTransformers (SBERT) modeli ile bir embedding’e dönüştürülür.  
-   - SBERT modeli, sorgunun anlamsal temsilini (vektörünü) çıkarır, bu sayede metnin semantik anlamı korunur.   
-
-. **Cosine Similarity ile Benzerlik Hesaplama:**  
-   - Sorgu embedding’i ile veri tabanındaki her bir embedding arasındaki cosine similarity hesaplanır.  
-   - Cosine similarity, iki vektörün arasındaki açıya göre bir benzerlik skoru verir.
-
-. **FAISS Model:**  
-   - Benzerlik hesaplaması FAISS ile de yapılır. İçerik embeddingleri kullanılır.
-
-. **Hibrit Model:**  
-   - İçerik ve konu embedding’lerinden elde edilen cosine similarity skorları, birleştirilerek toplam bir benzerlik skoru oluşturulur.  
-   - Kullanıcı arayüzünde sonuçlar bu toplam skorlara göre sıralanarak gösterilir.  
-
----
-
-### **Streamlit Uygulaması**  
-  - Streamlit uygulamasını çalıştırmak için:
     ```
-      python -m streamlit run streamlit_app.py
-    ``` 
-  - requirements.txt dosyasını kullanarak gerekli paketleri yüklemek için:
-    ```
-      pip install -r requirements.txt
-    ``` 
+  * Both content and subject embeddings were created and saved in MongoDB.
+
+---
+
+#### **Semantic and Hybrid Search**
+
+* **Scripts:**
+
+  * `cosine_icerik_search.py` (content-based search)
+  * `cosine_konu_search.py` (subject-based search)
+  * `hibrit_search.py` (combined content and subject search)
+
+#### **Script Functions**
+
+1. **`cosine_icerik_search.py`:**
+
+   * Performs semantic search over ruling **contents** based on user queries.
+   * Generates query embedding and calculates **cosine similarity** with content embeddings from MongoDB to return the most relevant results.
+   * For faster results, embeddings and other relevant data are saved in a file (e.g., `embedding_icerik_cache.npy`). If the file does not exist, the data is loaded from the database and the file is created. GPU can also be used to speed up queries.
+
+2. **`cosine_konu_search.py`:**
+
+   * Searches ruling **subjects** based on user queries.
+   * Generates query embedding and calculates similarity with subject embeddings.
+
+3. **`hibrit_search.py`:**
+
+   * Searches using **both content and subject** embeddings.
+   * Combines content and subject similarity scores.
+   * Each score is weighted according to the user query.
+   * You can try this approach here: [https://semanticsearchgib.streamlit.app/](https://semanticsearchgib.streamlit.app/)
+
+---
+
+#### **Methodology**
+
+* User input text is converted into an embedding using the SentenceTransformers (SBERT) model.
+* SBERT extracts the semantic representation (vector) of the query, preserving its meaning.
+
+**Cosine Similarity Calculation:**
+
+* Cosine similarity is calculated between the query embedding and each embedding in the database.
+* Cosine similarity provides a similarity score based on the angle between two vectors.
+
+**FAISS Model:**
+
+* Similarity can also be calculated using FAISS with content embeddings.
+
+**Hybrid Model:**
+
+* Cosine similarity scores from content and subject embeddings are combined to produce a total similarity score.
+* Results are displayed in the user interface ranked by this total score.
+
+---
+
+### **Streamlit Application**
+
+* To run the Streamlit app:
+
+  ```
+    python -m streamlit run streamlit_app.py
+  ```
+* To install required packages using `requirements.txt`:
+
+  ```
+    pip install -r requirements.txt
+  ```
